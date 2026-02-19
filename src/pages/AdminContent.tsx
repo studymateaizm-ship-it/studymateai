@@ -13,7 +13,7 @@ interface Content {
   createdBy: string;
   createdDate: string;
   status: "published" | "draft" | "archived";
-  views: number;
+  views: number;  
 }
 
 const AdminContent = () => {
