@@ -28,7 +28,11 @@ const UploadNotes = () => {
   // Function to analyze material in the background
   const triggerAnalysis = async (materialId: string, content: string) => {
     if (!isConfigured) {
-      console.log("AI not configured, skipping analysis");
+      console.warn("⚠ AI not configured - skipping analysis. Check browser console for setup instructions.");
+      updateMaterialAnalysis(materialId, {
+        analysisStatus: "failed",
+        analysisError: "AI provider not configured. Please set VITE_AI_PROVIDER and API key in environment.",
+      });
       return;
     }
 
@@ -38,10 +42,13 @@ const UploadNotes = () => {
         analysisStatus: "analyzing",
       });
 
+      console.log(`⏳ Starting AI analysis for material: ${materialId}`);
+
       // Perform analysis
       const analysis = await analyzeMaterial(content, 5);
 
       if (analysis.error) {
+        console.error(`❌ Analysis error for ${materialId}:`, analysis.error);
         updateMaterialAnalysis(materialId, {
           analysisStatus: "failed",
           analysisError: analysis.error,
@@ -52,13 +59,14 @@ const UploadNotes = () => {
           analysisStatus: "completed",
           analyzedAt: new Date(),
         });
-        console.log("✓ Analysis completed for material:", materialId);
+        console.log(`✓ Analysis completed successfully for material: ${materialId}`);
       }
     } catch (error) {
-      console.error("Error during material analysis:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error during analysis";
+      console.error(`❌ Exception during analysis for ${materialId}:`, error);
       updateMaterialAnalysis(materialId, {
         analysisStatus: "failed",
-        analysisError: error instanceof Error ? error.message : "Unknown error",
+        analysisError: errorMessage,
       });
     }
   };
@@ -464,32 +472,87 @@ const UploadNotes = () => {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.1 }}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 transition"
+                      className={`p-3 rounded-lg transition ${
+                        file.analyzedData?.analysisStatus === "failed"
+                          ? "bg-red-500/10 border border-red-500/30"
+                          : file.analyzedData?.analysisStatus === "completed"
+                            ? "bg-green-500/10 border border-green-500/30"
+                            : "bg-muted hover:bg-muted/80 border border-transparent"
+                      }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {getFileIcon(file.type)}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{file.size}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          {getFileIcon(file.type)}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">{file.size}</p>
+                            
+                            {/* Analysis Status */}
+                            {file.analyzedData && (
+                              <div className="mt-1 flex items-center gap-1">
+                                {file.analyzedData.analysisStatus === "analyzing" && (
+                                  <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                                    <Loader className="h-3 w-3 animate-spin" />
+                                    Analyzing...
+                                  </div>
+                                )}
+                                {file.analyzedData.analysisStatus === "completed" && (
+                                  <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Ready for AI features
+                                  </div>
+                                )}
+                                {file.analyzedData.analysisStatus === "failed" && (
+                                  <div className="flex flex-col gap-1 text-xs text-red-600 dark:text-red-400 w-full">
+                                    <div className="flex items-center gap-1">
+                                      <AlertCircle className="h-3 w-3" />
+                                      Analysis failed
+                                    </div>
+                                    {file.analyzedData.analysisError && (
+                                      <p className="text-xs text-red-600 dark:text-red-400 break-words">
+                                        {file.analyzedData.analysisError}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeMaterial(file.id)}
+                          className="h-8 w-8 p-0 flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeMaterial(file.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
                     </motion.div>
                   ))
                 )}
               </div>
               {materials.length > 0 && (
                 <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded text-sm">
-                  <p className="text-blue-700 dark:text-blue-400">
-                    ✓ {materials.length} material{materials.length !== 1 ? "s" : ""} analyzed and ready for AI features (Chat, Summarize, Quizzes, Solver)
-                  </p>
+                  {(() => {
+                    const completed = materials.filter(
+                      (m) => m.analyzedData?.analysisStatus === "completed"
+                    ).length;
+                    const analyzing = materials.filter(
+                      (m) => m.analyzedData?.analysisStatus === "analyzing"
+                    ).length;
+                    const failed = materials.filter(
+                      (m) => m.analyzedData?.analysisStatus === "failed"
+                    ).length;
+
+                    return (
+                      <p className="text-blue-700 dark:text-blue-400">
+                        ✓ {completed} analyzed
+                        {analyzing > 0 && ` • ${analyzing} analyzing`}
+                        {failed > 0 && ` • ${failed} failed`}
+                      </p>
+                    );
+                  })()}
                 </div>
               )}
             </Card>

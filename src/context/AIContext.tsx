@@ -46,13 +46,19 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
       geminiKey.trim().length > 0;
     
     if (aiProvider === "gemini" && isValidGeminiKey) {
-      console.log("✓ Gemini AI configured");
+      console.log("✓ Gemini AI configured and ready to use");
       setIsConfigured(true);
+    } else if (aiProvider === "gemini" && !isValidGeminiKey) {
+      console.warn("⚠ Gemini is selected but API key is missing or invalid. Set VITE_GEMINI_API_KEY in .env.local");
+      setIsConfigured(false);
     } else if (aiProvider === "ollama" && ollamaUrl) {
       console.log(`✓ Ollama AI configured (${ollamaUrl})`);
       setIsConfigured(true);
+    } else if (aiProvider === "ollama") {
+      console.warn("⚠ Ollama is selected but not reachable. Make sure Ollama is running locally.");
+      setIsConfigured(false);
     } else {
-      console.log("⚠ No AI provider configured. Please set up Gemini or Ollama in .env.local");
+      console.warn("⚠ No AI provider configured. To enable AI features, set VITE_AI_PROVIDER to 'gemini' or 'ollama' in your .env.local file.");
       setIsConfigured(false);
     }
   }, []);
