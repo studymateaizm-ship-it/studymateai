@@ -30,8 +30,25 @@ import UserProtectedRoute from "./components/UserProtectedRoute";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => {
+  const maintenance = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
+
+  if (maintenance) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-xl text-center">
+          <h1 className="text-4xl font-bold mb-4">We&rsquo;re temporarily offline</h1>
+          <p className="text-lg text-muted-foreground mb-6">
+            StudyMate AI is undergoing maintenance. Please check back shortly. If this was unexpected, contact support at support@studymateai.com.
+          </p>
+          <p className="text-sm text-muted-foreground">Admins can disable maintenance by clearing `VITE_MAINTENANCE_MODE` in Vercel and redeploying.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
     <AdminAuthProvider>
       <UserAuthProvider>
         <NoticeProvider>
