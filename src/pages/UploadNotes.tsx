@@ -19,8 +19,7 @@ const UploadNotes = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { materials, addMaterial, removeMaterial, updateMaterialAnalysis } = useMaterials();
-  const { user } = useUserAuth();
-  const { canUploadSize } = useUserAuth();
+  const { user, canUploadSize } = useUserAuth();
   const { isConfigured } = useAI();
   const [dragActive, setDragActive] = useState(false);
   const [materialName, setMaterialName] = useState("");
@@ -400,6 +399,16 @@ const UploadNotes = () => {
           >
             <CheckCircle2 className="h-5 w-5" />
             {successMessage}
+          </motion.div>
+        )}
+
+        {!supabaseAvailable && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded text-yellow-800"
+          >
+            <strong>Storage not configured:</strong> Uploaded files will be stored only in your browser state. To enable persistent uploads, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in your environment (locally in `.env.local` and in Vercel for production), and ensure the `study-materials` bucket exists and is public in Supabase.
           </motion.div>
         )}
 
