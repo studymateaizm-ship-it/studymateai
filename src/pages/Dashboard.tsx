@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Brain, Upload, FileText, CheckCircle2, Target, BookOpen, BarChart3, LogOut } from "lucide-react";
+import { Brain, Upload, FileText, CheckCircle2, Target, BookOpen, BarChart3, LogOut, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserAuth } from "@/context/UserAuthContext";
 
@@ -27,6 +27,13 @@ const Dashboard = () => {
       description: "Upload and manage your study materials",
       path: "/upload",
       color: "from-purple-500 to-purple-600",
+    },
+    {
+      icon: Video,
+      title: "Video Transcription",
+      description: "Transcribe YouTube videos and audio files",
+      path: "/transcribe",
+      color: "from-cyan-500 to-cyan-600",
     },
     {
       icon: FileText,

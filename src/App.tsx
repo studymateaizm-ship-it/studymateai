@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ChatTutor from "./pages/ChatTutor";
 import UploadNotes from "./pages/UploadNotes";
+import Transcribe from "./pages/Transcribe";
 import Summarize from "./pages/Summarize";
 import AssignmentSolver from "./pages/AssignmentSolver";
 import Quizzes from "./pages/Quizzes";
@@ -67,6 +68,14 @@ const App = () => (
                 element={
                   <UserProtectedRoute>
                     <UploadNotes />
+                  </UserProtectedRoute>
+                }
+              />
+              <Route
+                path="/transcribe"
+                element={
+                  <UserProtectedRoute>
+                    <Transcribe />
                   </UserProtectedRoute>
                 }
               />
