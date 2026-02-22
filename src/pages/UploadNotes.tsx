@@ -113,7 +113,7 @@ const UploadNotes = () => {
         )} MB\n\nUnsupported file type. Please upload PDF, Word, Excel, Image, or TXT files.`;
       }
 
-      let firebaseUrl: string | undefined;
+      let storageUrl: string | undefined;
       let storagePath: string | undefined;
 
       // Upload to Supabase if configured
@@ -122,7 +122,7 @@ const UploadNotes = () => {
         const uploadResult = await uploadFileToSupabase(file, user.id);
         
         if (uploadResult.success && uploadResult.url) {
-          firebaseUrl = uploadResult.url;
+          storageUrl = uploadResult.url;
           storagePath = uploadResult.path;
           console.log(`✓ File backed up to Supabase Storage`);
         } else {
@@ -137,7 +137,7 @@ const UploadNotes = () => {
         type: getParsedFileType(fileName, fileType),
         uploadedAt: new Date(),
         size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        firebaseUrl,
+        storageUrl,
         storagePath,
       };
 
