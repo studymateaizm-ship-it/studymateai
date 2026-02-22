@@ -26,6 +26,8 @@ export interface UploadedMaterial {
   uploadedAt: Date;
   size: string;
   analyzedData?: AnalyzedData;
+  firebaseUrl?: string; // Download URL from Firebase
+  storagePath?: string; // Path in Firebase Storage
 }
 
 interface MaterialsContextType {

@@ -7,8 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useMaterials, type UploadedMaterial } from "@/context/MaterialsContext";
+import { useUserAuth } from "@/context/UserAuthContext";
 import { useAI } from "@/context/AIContext";
 import { analyzeMaterial } from "@/services/aiService";
+import { uploadFileToFirebase, deleteFileFromFirebase, isFirebaseConfigured } from "@/services/firebaseService";
 import * as pdfjsLib from "pdfjs-dist";
 import * as mammoth from "mammoth";
 import * as XLSX from "xlsx";
@@ -17,6 +19,7 @@ const UploadNotes = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { materials, addMaterial, removeMaterial, updateMaterialAnalysis } = useMaterials();
+  const { user } = useUserAuth();
   const { isConfigured } = useAI();
   const [dragActive, setDragActive] = useState(false);
   const [materialName, setMaterialName] = useState("");
@@ -24,6 +27,7 @@ const UploadNotes = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const firebaseAvailable = isFirebaseConfigured();
 
   // Function to analyze material in the background
   const triggerAnalysis = async (materialId: string, content: string) => {
@@ -109,6 +113,23 @@ const UploadNotes = () => {
         )} MB\n\nUnsupported file type. Please upload PDF, Word, Excel, Image, or TXT files.`;
       }
 
+      let firebaseUrl: string | undefined;
+      let storagePath: string | undefined;
+
+      // Upload to Firebase if configured
+      if (firebaseAvailable && user?.id) {
+        console.log(`☁️ Uploading ${fileName} to Firebase Storage...`);
+        const uploadResult = await uploadFileToFirebase(file, user.id);
+        
+        if (uploadResult.success && uploadResult.url) {
+          firebaseUrl = uploadResult.url;
+          storagePath = uploadResult.path;
+          console.log(`✓ File backed up to Firebase Storage`);
+        } else {
+          console.warn(`⚠ Firebase upload skipped: ${uploadResult.error}`);
+        }
+      }
+
       const newMaterial: UploadedMaterial = {
         id: Date.now().toString(),
         name: fileName,
@@ -116,6 +137,8 @@ const UploadNotes = () => {
         type: getParsedFileType(fileName, fileType),
         uploadedAt: new Date(),
         size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        firebaseUrl,
+        storagePath,
       };
 
       addMaterial(newMaterial);
@@ -262,6 +285,23 @@ const UploadNotes = () => {
         fileInputRef.current.value = "";
       }
     }
+  };
+
+  const handleDeleteMaterial = async (materialId: string) => {
+    const material = materials.find((m) => m.id === materialId);
+    
+    // Delete from Firebase if it exists there
+    if (material?.storagePath && firebaseAvailable) {
+      console.log(`🗑️ Deleting from Firebase: ${material.storagePath}`);
+      const deleteResult = await deleteFileFromFirebase(material.storagePath);
+      if (deleteResult.success) {
+        console.log(`✓ File deleted from Firebase Storage`);
+      } else {
+        console.warn(`⚠ Failed to delete from Firebase: ${deleteResult.error}`);
+      }
+    }
+    
+    removeMaterial(materialId);
   };
 
   const handleSelectFilesClick = () => {
@@ -522,7 +562,7 @@ const UploadNotes = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeMaterial(file.id)}
+                          onClick={() => handleDeleteMaterial(file.id)}
                           className="h-8 w-8 p-0 flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
