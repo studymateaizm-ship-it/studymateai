@@ -10,7 +10,7 @@ import { useMaterials, type UploadedMaterial } from "@/context/MaterialsContext"
 import { useUserAuth } from "@/context/UserAuthContext";
 import { useAI } from "@/context/AIContext";
 import { analyzeMaterial } from "@/services/aiService";
-import { uploadFileToFirebase, deleteFileFromFirebase, isFirebaseConfigured } from "@/services/firebaseService";
+import { uploadFileToSupabase, deleteFileFromSupabase, isSupabaseConfigured } from "@/services/supabaseService";
 import * as pdfjsLib from "pdfjs-dist";
 import * as mammoth from "mammoth";
 import * as XLSX from "xlsx";
@@ -27,7 +27,7 @@ const UploadNotes = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const firebaseAvailable = isFirebaseConfigured();
+  const supabaseAvailable = isSupabaseConfigured();
 
   // Function to analyze material in the background
   const triggerAnalysis = async (materialId: string, content: string) => {
@@ -116,17 +116,17 @@ const UploadNotes = () => {
       let firebaseUrl: string | undefined;
       let storagePath: string | undefined;
 
-      // Upload to Firebase if configured
-      if (firebaseAvailable && user?.id) {
-        console.log(`☁️ Uploading ${fileName} to Firebase Storage...`);
-        const uploadResult = await uploadFileToFirebase(file, user.id);
+      // Upload to Supabase if configured
+      if (supabaseAvailable && user?.id) {
+        console.log(`☁️ Uploading ${fileName} to Supabase Storage...`);
+        const uploadResult = await uploadFileToSupabase(file, user.id);
         
         if (uploadResult.success && uploadResult.url) {
           firebaseUrl = uploadResult.url;
           storagePath = uploadResult.path;
-          console.log(`✓ File backed up to Firebase Storage`);
+          console.log(`✓ File backed up to Supabase Storage`);
         } else {
-          console.warn(`⚠ Firebase upload skipped: ${uploadResult.error}`);
+          console.warn(`⚠ Supabase upload skipped: ${uploadResult.error}`);
         }
       }
 
@@ -290,14 +290,14 @@ const UploadNotes = () => {
   const handleDeleteMaterial = async (materialId: string) => {
     const material = materials.find((m) => m.id === materialId);
     
-    // Delete from Firebase if it exists there
-    if (material?.storagePath && firebaseAvailable) {
-      console.log(`🗑️ Deleting from Firebase: ${material.storagePath}`);
-      const deleteResult = await deleteFileFromFirebase(material.storagePath);
+    // Delete from Supabase if it exists there
+    if (material?.storagePath && supabaseAvailable) {
+      console.log(`🗑️ Deleting from Supabase: ${material.storagePath}`);
+      const deleteResult = await deleteFileFromSupabase(material.storagePath);
       if (deleteResult.success) {
-        console.log(`✓ File deleted from Firebase Storage`);
+        console.log(`✓ File deleted from Supabase Storage`);
       } else {
-        console.warn(`⚠ Failed to delete from Firebase: ${deleteResult.error}`);
+        console.warn(`⚠ Failed to delete from Supabase: ${deleteResult.error}`);
       }
     }
     
