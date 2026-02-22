@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const AdminSettings = () => {
   const navigate = useNavigate();
@@ -23,6 +24,8 @@ const AdminSettings = () => {
   });
 
   const [saved, setSaved] = useState(false);
+  const [bucketStatus, setBucketStatus] = useState<string | null>(null);
+  const [bucketLoading, setBucketLoading] = useState(false);
 
   const handleSave = () => {
     setSaved(true);
@@ -82,6 +85,33 @@ const AdminSettings = () => {
             </h2>
 
             <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Storage</label>
+                  <p className="text-sm text-muted-foreground mb-2">Ensure Supabase storage bucket <strong>study-materials</strong> exists for file uploads.</p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={async () => {
+                        setBucketLoading(true);
+                        setBucketStatus(null);
+                        try {
+                          const r = await fetch('/api/create-supabase-bucket', { method: 'POST' });
+                          const j = await r.json();
+                          if (r.ok && j.success) setBucketStatus('Bucket created or already exists');
+                          else setBucketStatus('Failed: ' + JSON.stringify(j.error));
+                        } catch (err: any) {
+                          setBucketStatus('Error: ' + (err.message || String(err)));
+                        } finally {
+                          setBucketLoading(false);
+                        }
+                      }}
+                      disabled={bucketLoading}
+                    >
+                      {bucketLoading ? 'Working...' : 'Ensure study-materials bucket'}
+                    </Button>
+                    <Button variant="outline" onClick={() => setBucketStatus(null)}>Clear</Button>
+                  </div>
+                  {bucketStatus && <p className="text-sm mt-2">{bucketStatus}</p>}
+                </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Site Name</label>
                 <Input
