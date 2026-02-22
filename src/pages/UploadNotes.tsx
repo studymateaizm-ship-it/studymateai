@@ -20,6 +20,7 @@ const UploadNotes = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { materials, addMaterial, removeMaterial, updateMaterialAnalysis } = useMaterials();
   const { user } = useUserAuth();
+  const { canUploadSize } = useUserAuth();
   const { isConfigured } = useAI();
   const [dragActive, setDragActive] = useState(false);
   const [materialName, setMaterialName] = useState("");
@@ -78,6 +79,15 @@ const UploadNotes = () => {
   const processFile = async (file: File) => {
     setIsProcessing(true);
     try {
+      // Check user upload size permission
+      if (!canUploadSize(file.size)) {
+        setSuccessMessage(
+          `✗ Your current plan doesn't allow uploading files of this size. Upgrade to a higher plan to upload larger files.`
+        );
+        setTimeout(() => setSuccessMessage(""), 5000);
+        setIsProcessing(false);
+        return;
+      }
       let content = "";
       const fileType = file.type;
       const fileName = file.name;

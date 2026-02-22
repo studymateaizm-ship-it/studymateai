@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useMaterials } from "@/context/MaterialsContext";
+import { useUserAuth } from "@/context/UserAuthContext";
 import {
   transcribeYouTubeVideo,
   transcribeVideoFile,
@@ -26,6 +27,7 @@ const Transcribe = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addMaterial } = useMaterials();
+  const { canUseFeature } = useUserAuth();
 
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [transcription, setTranscription] = useState("");
@@ -38,6 +40,11 @@ const Transcribe = () => {
   const handleYouTubeTranscribe = async () => {
     if (!youtubeUrl.trim()) {
       setError("Please enter a YouTube URL");
+      return;
+    }
+
+    if (!canUseFeature("transcription")) {
+      setError("Your plan doesn't include transcription. Upgrade to access this feature.");
       return;
     }
 
@@ -66,6 +73,12 @@ const Transcribe = () => {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!canUseFeature("transcription")) {
+      setError("Your plan doesn't include transcription. Upgrade to access this feature.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
 
     setIsLoading(true);
     setError("");
